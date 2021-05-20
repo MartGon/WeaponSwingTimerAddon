@@ -235,6 +235,7 @@ end
 addon_data.target.UpdateVisualsOnUpdate = function()
     local settings = character_target_settings
     local frame = addon_data.target.frame
+	
     if settings.enabled and UnitExists("target") then
         frame:Show()
         local main_speed = addon_data.target.main_weapon_speed

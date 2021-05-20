@@ -10,6 +10,7 @@ addon_data.player.default_settings = {
 	enabled = true,
 	width = 200,
 	height = 10,
+        dw_height = 5,
     point = "CENTER",
 	rel_point = "CENTER",
 	x_offset = 0,
@@ -70,6 +71,20 @@ addon_data.player.RestoreDefaults = function()
     addon_data.player.UpdateConfigPanelValues()
 end
 
+addon_data.player.GetPlayerBarHeight = function()
+    local settings = character_player_settings
+    
+    local bar_height = 10
+    if addon_data.player.has_offhand then
+	bar_height = settings.dw_height
+    else
+	bar_height = settings.height
+    end
+
+    return bar_height
+end
+
+
 --[[============================================================================================]]--
 --[[====================================== LOGIC RELATED =======================================]]--
 --[[============================================================================================]]--
@@ -116,8 +131,16 @@ addon_data.player.OnInventoryChange = function()
     if addon_data.player.off_weapon_id ~= new_off_guid then
         addon_data.player.UpdateOffWeaponSpeed()
         addon_data.player.ResetOffSwingTimer()
+	
+	local settings = character_player_settings
+	addon_data.player.UpdateVisualsOnSettingsChange()
     end
     addon_data.player.off_weapon_id = new_off_guid
+    
+     if not addon_data.player.has_offhand then
+	local settings = character_player_settings
+	addon_data.player.UpdateVisualsOnSettingsChange()
+     end
 end
 
 addon_data.player.OnCombatLogUnfiltered = function(combat_info)
@@ -275,9 +298,9 @@ addon_data.player.UpdateVisualsOnUpdate = function()
         end
         -- Update the frame's appearance based on settings
         if addon_data.player.has_offhand and character_player_settings.show_offhand then
-            frame:SetHeight((settings.height * 2) + 2)
+            frame:SetHeight((addon_data.player.GetPlayerBarHeight() * 2) + 2)
         else
-            frame:SetHeight(settings.height)
+            frame:SetHeight(addon_data.player.GetPlayerBarHeight())
         end
         -- Update the alpha
         if addon_data.core.in_combat then
@@ -307,34 +330,34 @@ addon_data.player.UpdateVisualsOnSettingsChange = function()
                 bgFile = "Interface/AddOns/WeaponSwingTimer/Images/Background", 
                 edgeFile = nil, 
                 tile = true, tileSize = 16, edgeSize = 16, 
-                insets = { left = 8, right = 8, top = 8, bottom = 8}})
+                insets = { left = 8, right = 8, top = 8, bottom = 8}})	
         end
         frame.backplane:SetBackdropColor(0,0,0,settings.backplane_alpha)
         frame.main_bar:SetPoint("TOPLEFT", 0, 0)
-        frame.main_bar:SetHeight(settings.height)
+        frame.main_bar:SetHeight(addon_data.player.GetPlayerBarHeight())
         if settings.classic_bars then
             frame.main_bar:SetTexture('Interface/AddOns/WeaponSwingTimer/Images/Bar')
         else
             frame.main_bar:SetTexture('Interface/AddOns/WeaponSwingTimer/Images/Background')
         end
         frame.main_bar:SetVertexColor(settings.main_r, settings.main_g, settings.main_b, settings.main_a)
-        frame.main_spark:SetSize(16, settings.height)
-        frame.main_left_text:SetPoint("TOPLEFT", 2, -(settings.height / 2) + 5)
+        frame.main_spark:SetSize(16, addon_data.player.GetPlayerBarHeight())
+        frame.main_left_text:SetPoint("TOPLEFT", 2, -(addon_data.player.GetPlayerBarHeight() / 2) + 5)
         frame.main_left_text:SetTextColor(settings.main_text_r, settings.main_text_g, settings.main_text_b, settings.main_text_a)
-        frame.main_right_text:SetPoint("TOPRIGHT", -5, -(settings.height / 2) + 5)
+        frame.main_right_text:SetPoint("TOPRIGHT", -5, -(addon_data.player.GetPlayerBarHeight() / 2) + 5)
         frame.main_right_text:SetTextColor(settings.main_text_r, settings.main_text_g, settings.main_text_b, settings.main_text_a)
         frame.off_bar:SetPoint("BOTTOMLEFT", 0, 0)
-        frame.off_bar:SetHeight(settings.height)
+        frame.off_bar:SetHeight(addon_data.player.GetPlayerBarHeight())
         if settings.classic_bars then
             frame.off_bar:SetTexture('Interface/AddOns/WeaponSwingTimer/Images/Bar')
         else
             frame.off_bar:SetTexture('Interface/AddOns/WeaponSwingTimer/Images/Background')
         end
         frame.off_bar:SetVertexColor(settings.off_r, settings.off_g, settings.off_b, settings.off_a)
-        frame.off_spark:SetSize(16, settings.height)
-        frame.off_left_text:SetPoint("BOTTOMLEFT", 2, (settings.height / 2) - 5)
+        frame.off_spark:SetSize(16, addon_data.player.GetPlayerBarHeight())
+        frame.off_left_text:SetPoint("BOTTOMLEFT", 2, (addon_data.player.GetPlayerBarHeight() / 2) - 5)
         frame.off_left_text:SetTextColor(settings.off_text_r, settings.off_text_g, settings.off_text_b, settings.off_text_a)
-        frame.off_right_text:SetPoint("BOTTOMRIGHT", -5, (settings.height / 2) - 5)
+        frame.off_right_text:SetPoint("BOTTOMRIGHT", -5, (addon_data.player.GetPlayerBarHeight() / 2) - 5)
         frame.off_right_text:SetTextColor(settings.off_text_r, settings.off_text_g, settings.off_text_b, settings.off_text_a)
         if settings.show_left_text then
             frame.main_left_text:Show()
@@ -461,8 +484,10 @@ addon_data.player.UpdateConfigPanelValues = function()
     panel.show_right_text_checkbox:SetChecked(settings.show_right_text)
     panel.width_editbox:SetText(tostring(settings.width))
     panel.width_editbox:SetCursorPosition(0)
-    panel.height_editbox:SetText(tostring(settings.height))
+    panel.height_editbox:SetText(tostring(addon_data.player.GetPlayerBarHeight()))
     panel.height_editbox:SetCursorPosition(0)
+    panel.dw_height_editbox:SetText(tostring(settings.dw_height))
+    panel.dw_height_editbox:SetCursorPosition(0)
     panel.x_offset_editbox:SetText(tostring(settings.x_offset))
     panel.x_offset_editbox:SetCursorPosition(0)
     panel.y_offset_editbox:SetText(tostring(settings.y_offset))
@@ -526,6 +551,12 @@ end
 addon_data.player.HeightEditBoxOnEnter = function(self)
     character_player_settings.height = tonumber(self:GetText())
     addon_data.player.UpdateVisualsOnSettingsChange()
+end
+
+addon_data.player.DWHeightEditBoxOnEnter = function(self)
+    character_player_settings.dw_height = tonumber(self:GetText())
+    addon_data.player.UpdateVisualsOnSettingsChange()
+    print(character_player_settings.dw_height)
 end
 
 addon_data.player.XOffsetEditBoxOnEnter = function(self)
@@ -742,6 +773,18 @@ addon_data.player.CreateConfigPanel = function(parent_panel)
         25,
         addon_data.player.HeightEditBoxOnEnter)
     panel.height_editbox:SetPoint("TOPLEFT", 280, -60, "BOTTOMRIGHT", 355, -85)
+    
+        -- Dual Wield Height EditBox
+    panel.dw_height_editbox = addon_data.config.EditBoxFactory(
+        "DWPlayerHeightEditBox",
+        panel,
+        "Dual Wield Bar Height",
+        75,
+        25,
+        addon_data.player.DWHeightEditBoxOnEnter)
+    panel.dw_height_editbox:SetPoint("TOPLEFT", 450, -200, "BOTTOMRIGHT", 355, -85)
+
+
     -- X Offset EditBox
     panel.x_offset_editbox = addon_data.config.EditBoxFactory(
         "PlayerXOffsetEditBox",
